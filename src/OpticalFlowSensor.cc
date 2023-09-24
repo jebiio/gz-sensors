@@ -162,6 +162,14 @@ class gz::sensors::OpticalFlowSensorPrivate
 
   /// \brief publisher to publish point cloud
   public: transport::Node::Publisher pointPub;
+  // public: OpticalFlowOpenCV *optical_flow_;
+  float hfov_;
+  int dt_us_;
+  int output_rate_;
+  float focal_length_;
+  double first_frame_time_;
+  uint32_t frame_time_us_;
+  bool has_gyro_;
 };
 
 using namespace gz;
@@ -593,7 +601,7 @@ bool OpticalFlowSensor::Update(
   // opticalFlow_message.set_time_usec(now.Double() * 1e6);
   *opticalFlow_message.mutable_header()->mutable_stamp() = msgs::Convert(_now);
   opticalFlow_message.set_sensor_id(2.0);
-  opticalFlow_message.set_integration_time_us(quality ? dt_us_ : 0);
+  opticalFlow_message.set_integration_time_us(quality ? this->dataPtr->dt_us_ : 0);
   opticalFlow_message.set_integrated_x(quality ? flow_x_ang : 0.0f);
   opticalFlow_message.set_integrated_y(quality ? flow_y_ang : 0.0f);
   
