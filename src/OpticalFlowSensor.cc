@@ -440,12 +440,9 @@ bool OpticalFlowSensor::CreateCamera()
   // the xyz and rgb fields to be aligned to memory boundaries. This is need
   // by ROS1: https://github.com/ros/common_msgs/pull/77. Ideally, memory
   // alignment should be configured.
-  msgs::InitPointCloudPacked(
-        this->dataPtr->pointMsg,
-        this->OpticalFrameId(),
-        true,
-        {{"xyz", msgs::PointCloudPacked::Field::FLOAT32},
-         {"rgb", msgs::PointCloudPacked::Field::FLOAT32}});
+  msgs::InitPointCloudPacked(this->dataPtr->pointMsg, this->Name(), true,
+      {{"xyz", msgs::PointCloudPacked::Field::FLOAT32},
+       {"rgb", msgs::PointCloudPacked::Field::FLOAT32}});
 
   // Set the values of the point message based on the camera information.
   this->dataPtr->pointMsg.set_width(this->ImageWidth());
@@ -577,7 +574,7 @@ bool OpticalFlowSensor::Update(
 
   auto* frame = msg.mutable_header()->add_data();
   frame->set_key("frame_id");
-  frame->add_value(this->OpticalFrameId());
+  frame->add_value(this->FrameId());
 
   std::lock_guard<std::mutex> lock(this->dataPtr->mutex);
   msg.set_data(this->dataPtr->depthBuffer,
@@ -587,14 +584,14 @@ bool OpticalFlowSensor::Update(
   this->AddSequence(msg.mutable_header(), "default");
   this->dataPtr->pub.Publish(msg);
 
-  //msgs::OpticalFlow opticalFlow_message;
-
   float flow_x_ang = 0.0f;
   float flow_y_ang = 0.0f;
   //calculate angular flow
-  int quality = optical_flow_->calcFlow((uchar*)_image, frame_time_us_, dt_us_, flow_x_ang, flow_y_ang);
+  int quality = 1;//optical_flow_->calcFlow((uchar*)_image, frame_time_us_, dt_us_, flow_x_ang, flow_y_ang);
   
-  opticalFlow_message.set_time_usec(now.Double() * 1e6);
+  msgs::OpticalFlow opticalFlow_message;
+  // opticalFlow_message.set_time_usec(now.Double() * 1e6);
+  *opticalFlow_message.mutable_header()->mutable_stamp() = msgs::Convert(_now);
   opticalFlow_message.set_sensor_id(2.0);
   opticalFlow_message.set_integration_time_us(quality ? dt_us_ : 0);
   opticalFlow_message.set_integrated_x(quality ? flow_x_ang : 0.0f);
@@ -609,7 +606,7 @@ bool OpticalFlowSensor::Update(
   opticalFlow_message.set_time_delta_distance_us(0);
   opticalFlow_message.set_distance(0.0f); //get real values in gazebo_mavlink_interface.cpp
   //send message
-  opticalFlow_pub_->Publish(opticalFlow_message);
+  this->dataPtr->pub.Publish(opticalFlow_message);// opticalFlow_pub_->Publish(opticalFlow_message);
 
   if (this->dataPtr->imageEvent.ConnectionCount() > 0u)
   {

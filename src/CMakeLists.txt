@@ -88,6 +88,20 @@ target_link_libraries(${depth_camera_target}
     gz-transport${GZ_TRANSPORT_VER}::gz-transport${GZ_TRANSPORT_VER}
 )
 
+set(optical_flow_sources OpticalFlowSensor.cc)
+gz_add_component(optical_flow
+  SOURCES ${optical_flow_sources}
+  DEPENDS_ON_COMPONENTS camera
+  GET_TARGET_NAME optical_flow_target
+)
+target_compile_definitions(${optical_flow_target} PUBLIC OpticalFlowSensor_EXPORTS)
+target_link_libraries(${optical_flow_target}
+  PRIVATE
+    ${camera_target}
+    gz-msgs${GZ_MSGS_VER}::gz-msgs${GZ_MSGS_VER}
+    gz-transport${GZ_TRANSPORT_VER}::gz-transport${GZ_TRANSPORT_VER}
+)
+
 set(lidar_sources Lidar.cc)
 gz_add_component(lidar
   SOURCES ${lidar_sources}

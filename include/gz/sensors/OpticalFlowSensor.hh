@@ -39,7 +39,7 @@
 #pragma warning(pop)
 #endif
 
-#include "gz/sensors/depth_camera/Export.hh"
+#include "gz/sensors/optical_flow/Export.hh"
 #include "gz/sensors/CameraSensor.hh"
 #include "gz/sensors/Export.hh"
 #include "gz/sensors/Sensor.hh"
@@ -60,7 +60,7 @@ namespace gz
     /// It offers both a gz-transport interface and a direct C++ API
     /// to access the image data. The API works by setting a callback to be
     /// called with image data.
-    class GZ_SENSORS_DEPTH_CAMERA_VISIBLE OpticalFlowSensor
+    class GZ_SENSORS_OPTICAL_FLOW_VISIBLE OpticalFlowSensor
       : public CameraSensor
     {
       /// \brief constructor
