@@ -38,7 +38,7 @@
 *      Author: Christoph
 */
 
-#include "optical_flow.hpp"
+#include "gz/sensors/optical_flow.hpp"
 
 void OpticalFlow::initLimitRate()
 {

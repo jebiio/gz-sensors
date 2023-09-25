@@ -88,7 +88,15 @@ target_link_libraries(${depth_camera_target}
     gz-transport${GZ_TRANSPORT_VER}::gz-transport${GZ_TRANSPORT_VER}
 )
 
-set(optical_flow_sources OpticalFlowSensor.cc)
+find_package(OpenCV QUIET)
+
+set(optical_flow_sources 
+  OpticalFlowSensor.cc
+  flow_opencv.cpp 
+  optical_flow.cpp
+  trackFeatures.cpp
+)
+
 gz_add_component(optical_flow
   SOURCES ${optical_flow_sources}
   DEPENDS_ON_COMPONENTS camera
@@ -100,6 +108,7 @@ target_link_libraries(${optical_flow_target}
     ${camera_target}
     gz-msgs${GZ_MSGS_VER}::gz-msgs${GZ_MSGS_VER}
     gz-transport${GZ_TRANSPORT_VER}::gz-transport${GZ_TRANSPORT_VER}
+    ${OpenCV_LIBS}
 )
 
 set(lidar_sources Lidar.cc)
