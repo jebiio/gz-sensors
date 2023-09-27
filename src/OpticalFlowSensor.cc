@@ -162,14 +162,15 @@ class gz::sensors::OpticalFlowSensorPrivate
 
   /// \brief publisher to publish point cloud
   public: transport::Node::Publisher pointPub;
-  // public: OpticalFlowOpenCV *optical_flow_;
+  public: OpticalFlowOpenCV *optical_flow_;
   float hfov_;
   int dt_us_;
   int output_rate_;
   float focal_length_;
-  double first_frame_time_;
+  std::chrono::steady_clock::duration first_frame_time_;
   uint32_t frame_time_us_;
   bool has_gyro_;
+  bool first_frame = true;
 };
 
 using namespace gz;
@@ -357,6 +358,10 @@ bool OpticalFlowSensor::CreateCamera()
   int width = cameraSdf->ImageWidth();
   int height = cameraSdf->ImageHeight();
 
+  if (width != 64 || height != 64) {
+    gzerr << "Incorrect image size, must by 64 x 64.\n";
+  }
+
   double far = cameraSdf->FarClip();
   double near = cameraSdf->NearClip();
 
@@ -457,6 +462,11 @@ bool OpticalFlowSensor::CreateCamera()
   this->dataPtr->pointMsg.set_height(this->ImageHeight());
   this->dataPtr->pointMsg.set_row_step(
       this->dataPtr->pointMsg.point_step() * this->ImageWidth());
+
+  this->dataPtr->focal_length_ = (width/2)/tan(angle.Radian()/2);
+  this->dataPtr->output_rate_ = 20;
+
+  this->dataPtr->optical_flow_ = new OpticalFlowOpenCV(this->dataPtr->focal_length_, this->dataPtr->focal_length_, this->dataPtr->output_rate_);
 
   return true;
 }
@@ -592,11 +602,30 @@ bool OpticalFlowSensor::Update(
   this->AddSequence(msg.mutable_header(), "default");
   this->dataPtr->pub.Publish(msg);
 
+
+
+
+  //optical_flow
+  if(this->dataPtr->first_frame)
+  {
+    this->dataPtr->first_frame_time_ = _now;
+    this->dataPtr->first_frame = false;
+  }
+  
+  std::chrono::steady_clock::duration frame_time = _now;
+
+  this->dataPtr->frame_time_us_ = (uint32_t)(std::chrono::duration_cast<std::chrono::duration<float>>(frame_time - this->dataPtr->first_frame_time_).count() * 1e6); //since start
+
   float flow_x_ang = 0.0f;
   float flow_y_ang = 0.0f;
-  //calculate angular flow
-  int quality = 1;//optical_flow_->calcFlow((uchar*)_image, frame_time_us_, dt_us_, flow_x_ang, flow_y_ang);
-  
+
+  this->dataPtr->ConvertDepthToImage(this->dataPtr->depthBuffer,
+    this->dataPtr->image.Data<unsigned char>(), width, height);
+
+  unsigned char * _image = this->dataPtr->image.Data<unsigned char>();
+
+  int quality = this->dataPtr->optical_flow_->calcFlow((uchar*)_image, this->dataPtr->frame_time_us_, this->dataPtr->dt_us_, flow_x_ang, flow_y_ang);
+
   msgs::OpticalFlow opticalFlow_message;
   // opticalFlow_message.set_time_usec(now.Double() * 1e6);
   *opticalFlow_message.mutable_header()->mutable_stamp() = msgs::Convert(_now);
@@ -616,6 +645,9 @@ bool OpticalFlowSensor::Update(
   //send message
   this->dataPtr->pub.Publish(opticalFlow_message);// opticalFlow_pub_->Publish(opticalFlow_message);
 
+
+
+
   if (this->dataPtr->imageEvent.ConnectionCount() > 0u)
   {
     // Trigger callbacks.
@@ -629,6 +661,8 @@ bool OpticalFlowSensor::Update(
     }
   }
 
+  // if (this->HasPointConnections() &&
+  //     this->dataPtr->pointCloudBuffer)
   if (this->HasPointConnections() &&
       this->dataPtr->pointCloudBuffer)
   {

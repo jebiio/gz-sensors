@@ -20,11 +20,13 @@
 #include <memory>
 #include <cstdint>
 #include <string>
+#include <cmath>
 
 #include <sdf/sdf.hh>
 
 #include <gz/common/Event.hh>
 #include <gz/utils/SuppressWarning.hh>
+#include <gz/math.hh>
 
 #include <gz/msgs/image.pb.h>
 
@@ -43,6 +45,8 @@
 #include "gz/sensors/CameraSensor.hh"
 #include "gz/sensors/Export.hh"
 #include "gz/sensors/Sensor.hh"
+
+#include "flow_opencv.hpp"
 
 namespace gz
 {
