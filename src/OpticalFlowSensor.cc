@@ -38,6 +38,7 @@
 #include "gz/sensors/ImageGaussianNoiseModel.hh"
 #include "gz/sensors/ImageNoise.hh"
 #include "gz/sensors/RenderingEvents.hh"
+#include <gz/sensors/Util.hh>
 
 #include "PointCloudUtil.hh"
 
@@ -69,7 +70,7 @@ message OpticalFlow
 #endif
 
 /// \brief Private data for OpticalFlowSensor
-class gz::sensors::OpticalFlowSensorPrivate
+class custom::OpticalFlowSensorPrivate
 {
   /// \brief Save an image
   /// \param[in] _data the image data to be saved
@@ -175,6 +176,7 @@ class gz::sensors::OpticalFlowSensorPrivate
 
 using namespace gz;
 using namespace sensors;
+using namespace custom;
 
 //////////////////////////////////////////////////
 bool OpticalFlowSensorPrivate::ConvertDepthToImage(
@@ -276,23 +278,34 @@ bool OpticalFlowSensor::Load(const sdf::Sensor &_sdf)
 {
   std::lock_guard<std::mutex> lock(this->dataPtr->mutex);
 
-  if (!Sensor::Load(_sdf))
+  if (!::Sensor::Load(_sdf))
   {
     return false;
   }
 
   // Check if this is the right type
-  if (_sdf.Type() != sdf::SensorType::DEPTH_CAMERA)
+  // if (_sdf.Type() != sdf::SensorType::DEPTH_CAMERA)
+  // {
+  //   gzerr << "Attempting to a load a Depth Camera sensor, but received "
+  //     << "a " << _sdf.TypeStr() << std::endl;
+  // }
+
+  auto type = gz::sensors::customType(_sdf);
+  if ("optical_flow" != type)
   {
-    gzerr << "Attempting to a load a Depth Camera sensor, but received "
-      << "a " << _sdf.TypeStr() << std::endl;
+    gzerr << "Trying to load [odometer] sensor, but got type ["
+           << type << "] instead." << std::endl;
+    return false;
   }
 
+  // this->dataPtr->camera.emplace();
+  // Errors err = this->dataPtr->camera->Load(_sdf->GetElement("camera"));
+    
   if (_sdf.CameraSensor() == nullptr)
   {
     gzerr << "Attempting to a load a Depth Camera sensor, but received "
       << "a null sensor." << std::endl;
-    return false;
+    // return false;
   }
 
   this->dataPtr->sdfSensor = _sdf;
@@ -330,11 +343,12 @@ bool OpticalFlowSensor::Load(const sdf::Sensor &_sdf)
   gzdbg << "Points for [" << this->Name() << "] advertised on ["
          << this->Topic() << "/points]" << std::endl;
 
+  gzerr << "create camera1\n";
   if (this->Scene())
   {
+    gzerr << "create camera2\n";
     this->CreateCamera();
   }
-
   this->dataPtr->sceneChangeConnection =
       RenderingEvents::ConnectSceneChangeCallback(
       std::bind(&OpticalFlowSensor::SetScene, this, std::placeholders::_1));
@@ -347,6 +361,7 @@ bool OpticalFlowSensor::Load(const sdf::Sensor &_sdf)
 //////////////////////////////////////////////////
 bool OpticalFlowSensor::CreateCamera()
 {
+  gzerr << "create camera3\n";
   const sdf::Camera *cameraSdf = this->dataPtr->sdfSensor.CameraSensor();
 
   if (!cameraSdf)
@@ -367,8 +382,17 @@ bool OpticalFlowSensor::CreateCamera()
 
   this->PopulateInfo(cameraSdf);
 
+  if (!this->dataPtr->depthCamera)
+  {
+    gzerr << "Camera doesn't exist.\n";
+  }
   this->dataPtr->depthCamera = this->Scene()->CreateDepthCamera(
       this->Name());
+  if (!this->dataPtr->depthCamera)
+  {
+    gzerr << "Camera doesn't exist.\n";
+    return false;
+  }
   this->dataPtr->depthCamera->SetImageWidth(width);
   this->dataPtr->depthCamera->SetImageHeight(height);
   this->dataPtr->depthCamera->SetNearClipPlane(near);
