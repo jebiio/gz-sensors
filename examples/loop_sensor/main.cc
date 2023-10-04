@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
-*/
+ */
 
 #include <vector>
 
 #include <sdf/Sensor.hh>
+#include <sdf/Camera.hh>
 
 #include <gz/common/Console.hh>
 #include <gz/common/SignalHandler.hh>
@@ -25,11 +26,11 @@
 
 // Include all supported sensors
 #include <gz/sensors/AltimeterSensor.hh>
-#include "../custom_sensor/Odometer.hh"
+#include "../../include/gz/sensors/OpticalFlowSensor.hh"
 
 using namespace std::literals::chrono_literals;
 
-int main(int argc,  char **argv)
+int main(int argc, char **argv)
 {
   gz::common::Console::SetVerbosity(4);
 
@@ -80,25 +81,42 @@ int main(int argc,  char **argv)
         }
         else if (sensor->Type() == sdf::SensorType::CUSTOM)
         {
-          sensorPtr = mgr.CreateSensor<custom::Odometer>(*sensor);
+          sensorPtr = mgr.CreateSensor<custom::OpticalFlowSensor>(*sensor);
+          if (!sensorPtr)
+          {
+            gzerr << "Unable to load camera sensor\n";
+            return 1;
+          }
+          for (const auto &sensorPtr : sensors)
+          {
+            if (auto altimeter = dynamic_cast<gz::sensors::AltimeterSensor *>(
+                    sensorPtr))
+            {
+              altimeter->SetVerticalVelocity(altimeter->VerticalVelocity() + 0.1);
+            }
+            else if (auto OpticalFlow = dynamic_cast<custom::OpticalFlowSensor *>(sensorPtr))
+            {
+              OpticalFlow->CreateCamera();
+            }
+          }
         }
         else
         {
           gzerr << "Sensor type [" << static_cast<int>(sensor->Type())
-                 << "] not supported." << std::endl;
+                << "] not supported." << std::endl;
         }
 
         if (nullptr == sensorPtr)
         {
           gzerr << "Failed to create sensor [" << sensor->Name() << "]"
-                 << std::endl;
+                << std::endl;
           continue;
         }
 
         sensors.push_back(sensorPtr);
 
         gzmsg << "Added sensor [" << sensor->Name() << "] to manager."
-               << std::endl;
+              << std::endl;
       }
     }
   }
@@ -112,10 +130,8 @@ int main(int argc,  char **argv)
   // Stop when user presses Ctrl+C
   bool signaled{false};
   gz::common::SignalHandler sigHandler;
-  sigHandler.AddCallback([&] (int)
-  {
-    signaled = true;
-  });
+  sigHandler.AddCallback([&](int)
+                         { signaled = true; });
 
   gzmsg << "Looping sensor manager. Press Ctrl + C to stop." << std::endl;
 
@@ -126,14 +142,14 @@ int main(int argc,  char **argv)
     for (const auto &sensorPtr : sensors)
     {
       if (auto altimeter = dynamic_cast<gz::sensors::AltimeterSensor *>(
-          sensorPtr))
+              sensorPtr))
       {
         altimeter->SetVerticalVelocity(altimeter->VerticalVelocity() + 0.1);
       }
-      else if (auto odometer = dynamic_cast<custom::Odometer *>(sensorPtr))
+      else if (auto OpticalFlow = dynamic_cast<custom::OpticalFlowSensor *>(sensorPtr))
       {
-        odometer->NewPosition(odometer->Position() +
-            gz::math::Vector3d(0.1, 0.1, 0.0));
+        // OpticalFlow->NewPosition(odometer->Position() +
+        //     gz::math::Vector3d(0.1, 0.1, 0.0));
       }
     }
 
