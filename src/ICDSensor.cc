@@ -29,7 +29,7 @@
 #include <gz/msgs/Utility.hh>
 #include <gz/transport/Node.hh>
 
-#include "gz/sensors/ImuSensor.hh"
+#include "gz/sensors/ICDSensor.hh"
 #include "gz/sensors/Noise.hh"
 #include "gz/sensors/SensorFactory.hh"
 #include "gz/sensors/SensorTypes.hh"
@@ -39,8 +39,8 @@
 using namespace gz;
 using namespace sensors;
 
-/// \brief Private data for ImuSensor
-class gz::sensors::ImuSensorPrivate
+/// \brief Private data for ICDSensor
+class gz::sensors::ICDSensorPrivate
 {
   /// \brief node to create publisher
   public: transport::Node node;
@@ -104,24 +104,24 @@ class gz::sensors::ImuSensorPrivate
 };
 
 //////////////////////////////////////////////////
-ImuSensor::ImuSensor()
-  : dataPtr(new ImuSensorPrivate())
+ICDSensor::ICDSensor()
+  : dataPtr(new ICDSensorPrivate())
 {
 }
 
 //////////////////////////////////////////////////
-ImuSensor::~ImuSensor()
+ICDSensor::~ICDSensor()
 {
 }
 
 //////////////////////////////////////////////////
-bool ImuSensor::Init()
+bool ICDSensor::Init()
 {
   return this->Sensor::Init();
 }
 
 //////////////////////////////////////////////////
-bool ImuSensor::Load(const sdf::Sensor &_sdf)
+bool ICDSensor::Load(const sdf::Sensor &_sdf)
 {
   if (!Sensor::Load(_sdf))
     return false;
@@ -197,7 +197,7 @@ bool ImuSensor::Load(const sdf::Sensor &_sdf)
 }
 
 //////////////////////////////////////////////////
-bool ImuSensor::Load(sdf::ElementPtr _sdf)
+bool ICDSensor::Load(sdf::ElementPtr _sdf)
 {
   sdf::Sensor sdfSensor;
   sdfSensor.Load(_sdf);
@@ -205,9 +205,9 @@ bool ImuSensor::Load(sdf::ElementPtr _sdf)
 }
 
 //////////////////////////////////////////////////
-bool ImuSensor::Update(const std::chrono::steady_clock::duration &_now)
+bool ICDSensor::Update(const std::chrono::steady_clock::duration &_now)
 {
-  GZ_PROFILE("ImuSensor::Update");
+  GZ_PROFILE("ICDSensor::Update");
   if (!this->dataPtr->initialized)
   {
     gzerr << "Not initialized, update ignored.\n";
@@ -275,9 +275,9 @@ bool ImuSensor::Update(const std::chrono::steady_clock::duration &_now)
   msgs::Set(msg.mutable_linear_acceleration(), this->dataPtr->linearAcc);
 
   transport::Node node;
-  auto jaeeunPub = node.Advertise<msgs::StringMsg>("/gazebo/jaeeunImu");  
+  auto jaeeunPub = node.Advertise<msgs::StringMsg>("/gazebo/jaeeunICD");  
   msgs::StringMsg stringMsg;
-  stringMsg.set_data("hello IMU Origin");// 원하는 토픽 설정
+  stringMsg.set_data("hello ICD!!!!!!!!!!!");// 원하는 토픽 설정
   jaeeunPub.Publish(stringMsg);
 
 
@@ -290,43 +290,43 @@ bool ImuSensor::Update(const std::chrono::steady_clock::duration &_now)
 }
 
 //////////////////////////////////////////////////
-void ImuSensor::SetAngularVelocity(const math::Vector3d &_angularVel)
+void ICDSensor::SetAngularVelocity(const math::Vector3d &_angularVel)
 {
   this->dataPtr->angularVel = _angularVel;
 }
 
 //////////////////////////////////////////////////
-math::Vector3d ImuSensor::AngularVelocity() const
+math::Vector3d ICDSensor::AngularVelocity() const
 {
   return this->dataPtr->angularVel;
 }
 
 //////////////////////////////////////////////////
-void ImuSensor::SetLinearAcceleration(const math::Vector3d &_linearAcc)
+void ICDSensor::SetLinearAcceleration(const math::Vector3d &_linearAcc)
 {
   this->dataPtr->linearAcc = _linearAcc;
 }
 
 //////////////////////////////////////////////////
-math::Vector3d ImuSensor::LinearAcceleration() const
+math::Vector3d ICDSensor::LinearAcceleration() const
 {
   return this->dataPtr->linearAcc;
 }
 
 //////////////////////////////////////////////////
-void ImuSensor::SetWorldPose(const math::Pose3d _pose)
+void ICDSensor::SetWorldPose(const math::Pose3d _pose)
 {
   this->dataPtr->worldPose = _pose;
 }
 
 //////////////////////////////////////////////////
-math::Pose3d ImuSensor::WorldPose() const
+math::Pose3d ICDSensor::WorldPose() const
 {
   return this->dataPtr->worldPose;
 }
 
 //////////////////////////////////////////////////
-void ImuSensor::SetWorldFrameOrientation(
+void ICDSensor::SetWorldFrameOrientation(
   const math::Quaterniond &_rot, WorldFrameEnumType _relativeTo)
 {
   this->dataPtr->worldRelativeOrientation = _rot;
@@ -395,49 +395,49 @@ void ImuSensor::SetWorldFrameOrientation(
 }
 
 //////////////////////////////////////////////////
-void ImuSensor::SetOrientationReference(const math::Quaterniond &_orient)
+void ICDSensor::SetOrientationReference(const math::Quaterniond &_orient)
 {
   this->dataPtr->orientationReference = _orient;
 }
 
 //////////////////////////////////////////////////
-math::Quaterniond ImuSensor::OrientationReference() const
+math::Quaterniond ICDSensor::OrientationReference() const
 {
   return this->dataPtr->orientationReference;
 }
 
 //////////////////////////////////////////////////
-void ImuSensor::SetOrientationEnabled(bool _enabled)
+void ICDSensor::SetOrientationEnabled(bool _enabled)
 {
   this->dataPtr->orientationEnabled = _enabled;
 }
 
 //////////////////////////////////////////////////
-bool ImuSensor::OrientationEnabled() const
+bool ICDSensor::OrientationEnabled() const
 {
   return this->dataPtr->orientationEnabled;
 }
 
 //////////////////////////////////////////////////
-void ImuSensor::SetGravity(const math::Vector3d &_gravity)
+void ICDSensor::SetGravity(const math::Vector3d &_gravity)
 {
   this->dataPtr->gravity = _gravity;
 }
 
 //////////////////////////////////////////////////
-math::Vector3d ImuSensor::Gravity() const
+math::Vector3d ICDSensor::Gravity() const
 {
   return this->dataPtr->gravity;
 }
 
 //////////////////////////////////////////////////
-math::Quaterniond ImuSensor::Orientation() const
+math::Quaterniond ICDSensor::Orientation() const
 {
   return this->dataPtr->orientation;
 }
 
 //////////////////////////////////////////////////
-bool ImuSensor::HasConnections() const
+bool ICDSensor::HasConnections() const
 {
   return this->dataPtr->pub && this->dataPtr->pub.HasConnections();
 }
