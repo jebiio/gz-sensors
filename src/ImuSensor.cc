@@ -23,7 +23,8 @@
 #if defined(_MSC_VER)
   #pragma warning(pop)
 #endif
-
+#include <gz/msgs.hh>
+#include <gz/transport.hh>
 #include <gz/common/Profiler.hh>
 #include <gz/msgs/Utility.hh>
 #include <gz/transport/Node.hh>
@@ -32,6 +33,8 @@
 #include "gz/sensors/Noise.hh"
 #include "gz/sensors/SensorFactory.hh"
 #include "gz/sensors/SensorTypes.hh"
+
+
 
 using namespace gz;
 using namespace sensors;
@@ -44,6 +47,9 @@ class gz::sensors::ImuSensorPrivate
 
   /// \brief publisher to publish imu messages.
   public: transport::Node::Publisher pub;
+
+  public: transport::Node::Publisher jaeeunPub;
+  
 
   /// \brief true if Load() has been called and was successful
   public: bool initialized = false;
@@ -267,6 +273,13 @@ bool ImuSensor::Update(const std::chrono::steady_clock::duration &_now)
   }
   msgs::Set(msg.mutable_angular_velocity(), this->dataPtr->angularVel);
   msgs::Set(msg.mutable_linear_acceleration(), this->dataPtr->linearAcc);
+
+  transport::Node node;
+  auto jaeeunPub = node.Advertise<msgs::StringMsg>("/gazebo/jaeeunImu");  
+  msgs::StringMsg stringMsg;
+  stringMsg.set_data("hello IMU");// 원하는 토픽 설정
+  jaeeunPub.Publish(stringMsg);
+
 
   // publish
   this->AddSequence(msg.mutable_header());
