@@ -87,7 +87,9 @@ set(GZ_MSGS_VER ${gz-msgs9_VERSION_MAJOR})
 
 #--------------------------------------
 # Find SDFormat
-gz_find_package(sdformat13 VERSION 13.3 REQUIRED)
+# gz_find_package(sdformat13 VERSION 13.3 REQUIRED)
+# set(SDF_VER ${sdformat13_VERSION_MAJOR}
+find_package(sdformat13 PATHS /home/jeyong/projects/kari/sdformat/build/cmake)
 set(SDF_VER ${sdformat13_VERSION_MAJOR})
 
 #============================================================================

@@ -29,7 +29,7 @@
 #include <gz/msgs/Utility.hh>
 #include <gz/transport/Node.hh>
 
-#include "gz/sensors/ICDSensor.hh"
+#include "gz/sensors/IcdSensor.hh"
 #include "gz/sensors/Noise.hh"
 #include "gz/sensors/SensorFactory.hh"
 #include "gz/sensors/SensorTypes.hh"
@@ -39,8 +39,8 @@
 using namespace gz;
 using namespace sensors;
 
-/// \brief Private data for ICDSensor
-class gz::sensors::ICDSensorPrivate
+/// \brief Private data for IcdSensor
+class gz::sensors::IcdSensorPrivate
 {
   /// \brief node to create publisher
   public: transport::Node node;
@@ -104,36 +104,36 @@ class gz::sensors::ICDSensorPrivate
 };
 
 //////////////////////////////////////////////////
-ICDSensor::ICDSensor()
-  : dataPtr(new ICDSensorPrivate())
+IcdSensor::IcdSensor()
+  : dataPtr(new IcdSensorPrivate())
 {
 }
 
 //////////////////////////////////////////////////
-ICDSensor::~ICDSensor()
+IcdSensor::~IcdSensor()
 {
 }
 
 //////////////////////////////////////////////////
-bool ICDSensor::Init()
+bool IcdSensor::Init()
 {
   return this->Sensor::Init();
 }
 
 //////////////////////////////////////////////////
-bool ICDSensor::Load(const sdf::Sensor &_sdf)
+bool IcdSensor::Load(const sdf::Sensor &_sdf)
 {
   if (!Sensor::Load(_sdf))
     return false;
 
   // Check if this is the right type
-  if (_sdf.Type() != sdf::SensorType::IMU)
+  if (_sdf.Type() != sdf::SensorType::ICD)
   {
     gzerr << "Attempting to a load an IMU sensor, but received "
       << "a " << _sdf.TypeStr() << std::endl;
   }
 
-  if (_sdf.ImuSensor() == nullptr)
+  if (_sdf.IcdSensor() == nullptr)
   {
     gzerr << "Attempting to a load an IMU sensor, but received "
       << "a null sensor." << std::endl;
@@ -141,7 +141,7 @@ bool ICDSensor::Load(const sdf::Sensor &_sdf)
   }
 
   if (this->Topic().empty())
-    this->SetTopic("/imu");
+    this->SetTopic("/icd");
 
   this->dataPtr->pub =
       this->dataPtr->node.Advertise<msgs::IMU>(this->Topic());
@@ -156,12 +156,12 @@ bool ICDSensor::Load(const sdf::Sensor &_sdf)
          << this->Topic() << "]" << std::endl;
 
   const std::map<SensorNoiseType, sdf::Noise> noises = {
-    {ACCELEROMETER_X_NOISE_M_S_S, _sdf.ImuSensor()->LinearAccelerationXNoise()},
-    {ACCELEROMETER_Y_NOISE_M_S_S, _sdf.ImuSensor()->LinearAccelerationYNoise()},
-    {ACCELEROMETER_Z_NOISE_M_S_S, _sdf.ImuSensor()->LinearAccelerationZNoise()},
-    {GYROSCOPE_X_NOISE_RAD_S, _sdf.ImuSensor()->AngularVelocityXNoise()},
-    {GYROSCOPE_Y_NOISE_RAD_S, _sdf.ImuSensor()->AngularVelocityYNoise()},
-    {GYROSCOPE_Z_NOISE_RAD_S, _sdf.ImuSensor()->AngularVelocityZNoise()},
+    {ACCELEROMETER_X_NOISE_M_S_S, _sdf.IcdSensor()->LinearAccelerationXNoise()},
+    {ACCELEROMETER_Y_NOISE_M_S_S, _sdf.IcdSensor()->LinearAccelerationYNoise()},
+    {ACCELEROMETER_Z_NOISE_M_S_S, _sdf.IcdSensor()->LinearAccelerationZNoise()},
+    {GYROSCOPE_X_NOISE_RAD_S, _sdf.IcdSensor()->AngularVelocityXNoise()},
+    {GYROSCOPE_Y_NOISE_RAD_S, _sdf.IcdSensor()->AngularVelocityYNoise()},
+    {GYROSCOPE_Z_NOISE_RAD_S, _sdf.IcdSensor()->AngularVelocityZNoise()},
   };
 
   for (const auto & [noiseType, noiseSdf] : noises)
@@ -172,7 +172,7 @@ bool ICDSensor::Load(const sdf::Sensor &_sdf)
     }
   }
 
-  std::string localization = _sdf.ImuSensor()->Localization();
+  std::string localization = _sdf.IcdSensor()->Localization();
 
   if (localization == "ENU")
   {
@@ -188,16 +188,16 @@ bool ICDSensor::Load(const sdf::Sensor &_sdf)
   }
 
   this->dataPtr->customRpyParentFrame =
-      _sdf.ImuSensor()->CustomRpyParentFrame();
+      _sdf.IcdSensor()->CustomRpyParentFrame();
   this->dataPtr->customRpyQuaternion = math::Quaterniond(
-      _sdf.ImuSensor()->CustomRpy());
+      _sdf.IcdSensor()->CustomRpy());
 
   this->dataPtr->initialized = true;
   return true;
 }
 
 //////////////////////////////////////////////////
-bool ICDSensor::Load(sdf::ElementPtr _sdf)
+bool IcdSensor::Load(sdf::ElementPtr _sdf)
 {
   sdf::Sensor sdfSensor;
   sdfSensor.Load(_sdf);
@@ -205,9 +205,9 @@ bool ICDSensor::Load(sdf::ElementPtr _sdf)
 }
 
 //////////////////////////////////////////////////
-bool ICDSensor::Update(const std::chrono::steady_clock::duration &_now)
+bool IcdSensor::Update(const std::chrono::steady_clock::duration &_now)
 {
-  GZ_PROFILE("ICDSensor::Update");
+  GZ_PROFILE("IcdSensor::Update");
   if (!this->dataPtr->initialized)
   {
     gzerr << "Not initialized, update ignored.\n";
@@ -290,43 +290,43 @@ bool ICDSensor::Update(const std::chrono::steady_clock::duration &_now)
 }
 
 //////////////////////////////////////////////////
-void ICDSensor::SetAngularVelocity(const math::Vector3d &_angularVel)
+void IcdSensor::SetAngularVelocity(const math::Vector3d &_angularVel)
 {
   this->dataPtr->angularVel = _angularVel;
 }
 
 //////////////////////////////////////////////////
-math::Vector3d ICDSensor::AngularVelocity() const
+math::Vector3d IcdSensor::AngularVelocity() const
 {
   return this->dataPtr->angularVel;
 }
 
 //////////////////////////////////////////////////
-void ICDSensor::SetLinearAcceleration(const math::Vector3d &_linearAcc)
+void IcdSensor::SetLinearAcceleration(const math::Vector3d &_linearAcc)
 {
   this->dataPtr->linearAcc = _linearAcc;
 }
 
 //////////////////////////////////////////////////
-math::Vector3d ICDSensor::LinearAcceleration() const
+math::Vector3d IcdSensor::LinearAcceleration() const
 {
   return this->dataPtr->linearAcc;
 }
 
 //////////////////////////////////////////////////
-void ICDSensor::SetWorldPose(const math::Pose3d _pose)
+void IcdSensor::SetWorldPose(const math::Pose3d _pose)
 {
   this->dataPtr->worldPose = _pose;
 }
 
 //////////////////////////////////////////////////
-math::Pose3d ICDSensor::WorldPose() const
+math::Pose3d IcdSensor::WorldPose() const
 {
   return this->dataPtr->worldPose;
 }
 
 //////////////////////////////////////////////////
-void ICDSensor::SetWorldFrameOrientation(
+void IcdSensor::SetWorldFrameOrientation(
   const math::Quaterniond &_rot, WorldFrameEnumType _relativeTo)
 {
   this->dataPtr->worldRelativeOrientation = _rot;
@@ -395,49 +395,49 @@ void ICDSensor::SetWorldFrameOrientation(
 }
 
 //////////////////////////////////////////////////
-void ICDSensor::SetOrientationReference(const math::Quaterniond &_orient)
+void IcdSensor::SetOrientationReference(const math::Quaterniond &_orient)
 {
   this->dataPtr->orientationReference = _orient;
 }
 
 //////////////////////////////////////////////////
-math::Quaterniond ICDSensor::OrientationReference() const
+math::Quaterniond IcdSensor::OrientationReference() const
 {
   return this->dataPtr->orientationReference;
 }
 
 //////////////////////////////////////////////////
-void ICDSensor::SetOrientationEnabled(bool _enabled)
+void IcdSensor::SetOrientationEnabled(bool _enabled)
 {
   this->dataPtr->orientationEnabled = _enabled;
 }
 
 //////////////////////////////////////////////////
-bool ICDSensor::OrientationEnabled() const
+bool IcdSensor::OrientationEnabled() const
 {
   return this->dataPtr->orientationEnabled;
 }
 
 //////////////////////////////////////////////////
-void ICDSensor::SetGravity(const math::Vector3d &_gravity)
+void IcdSensor::SetGravity(const math::Vector3d &_gravity)
 {
   this->dataPtr->gravity = _gravity;
 }
 
 //////////////////////////////////////////////////
-math::Vector3d ICDSensor::Gravity() const
+math::Vector3d IcdSensor::Gravity() const
 {
   return this->dataPtr->gravity;
 }
 
 //////////////////////////////////////////////////
-math::Quaterniond ICDSensor::Orientation() const
+math::Quaterniond IcdSensor::Orientation() const
 {
   return this->dataPtr->orientation;
 }
 
 //////////////////////////////////////////////////
-bool ICDSensor::HasConnections() const
+bool IcdSensor::HasConnections() const
 {
   return this->dataPtr->pub && this->dataPtr->pub.HasConnections();
 }

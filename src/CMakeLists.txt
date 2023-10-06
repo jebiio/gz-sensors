@@ -129,7 +129,7 @@ target_link_libraries(${logical_camera_target}
 set(magnetometer_sources MagnetometerSensor.cc)
 gz_add_component(magnetometer SOURCES ${magnetometer_sources} GET_TARGET_NAME magnetometer_target)
 
-set(icd_sources ICDSensor.cc)
+set(icd_sources IcdSensor.cc)
 gz_add_component(icd SOURCES ${icd_sources} GET_TARGET_NAME icd_target)
 
 set(imu_sources ImuSensor.cc)
