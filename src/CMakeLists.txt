@@ -74,6 +74,24 @@ target_link_libraries(${camera_target}
     gz-transport${GZ_TRANSPORT_VER}::gz-transport${GZ_TRANSPORT_VER}
 )
 
+set(mycamera_sources MyCameraSensor.cc)
+gz_add_component(mycamera
+  SOURCES ${mycamera_sources}
+  DEPENDS_ON_COMPONENTS rendering
+  GET_TARGET_NAME mycamera_target
+)
+# custom compile definitions since the one provided automatically is versioned and will
+# make the code need to change with every major version
+target_compile_definitions(${mycamera_target} PUBLIC MyCameraSensor_EXPORTS)
+target_link_libraries(${mycamera_target}
+  PUBLIC
+    ${rendering_target}
+  PRIVATE
+    gz-msgs${GZ_MSGS_VER}::gz-msgs${GZ_MSGS_VER}
+    gz-transport${GZ_TRANSPORT_VER}::gz-transport${GZ_TRANSPORT_VER}
+)
+
+
 set(depth_camera_sources DepthCameraSensor.cc)
 gz_add_component(depth_camera
   SOURCES ${depth_camera_sources}
