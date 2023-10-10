@@ -74,6 +74,24 @@ target_link_libraries(${camera_target}
     gz-transport${GZ_TRANSPORT_VER}::gz-transport${GZ_TRANSPORT_VER}
 )
 
+set(optical_kari_sources OpticalKariSensor.cc)
+gz_add_component(optical_kari
+  SOURCES ${optical_kari_sources}
+  DEPENDS_ON_COMPONENTS rendering
+  GET_TARGET_NAME optical_kari_target
+)
+# custom compile definitions since the one provided automatically is versioned and will
+# make the code need to change with every major version
+target_compile_definitions(${optical_kari_target} PUBLIC OpticalKariSensor_EXPORTS)
+target_link_libraries(${optical_kari_target}
+  PUBLIC
+    ${rendering_target}
+  PRIVATE
+    gz-msgs${GZ_MSGS_VER}::gz-msgs${GZ_MSGS_VER}
+    gz-transport${GZ_TRANSPORT_VER}::gz-transport${GZ_TRANSPORT_VER}
+)
+
+
 set(depth_camera_sources DepthCameraSensor.cc)
 gz_add_component(depth_camera
   SOURCES ${depth_camera_sources}

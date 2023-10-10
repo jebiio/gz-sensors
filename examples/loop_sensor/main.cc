@@ -26,6 +26,7 @@
 // Include all supported sensors
 #include <gz/sensors/AltimeterSensor.hh>
 #include "../custom_sensor/Odometer.hh"
+#include "/home/jeyong/projects/kari/gz-sensors/include/gz/sensors/OpticalSensor.hh"
 
 using namespace std::literals::chrono_literals;
 
@@ -80,7 +81,7 @@ int main(int argc,  char **argv)
         }
         else if (sensor->Type() == sdf::SensorType::CUSTOM)
         {
-          sensorPtr = mgr.CreateSensor<custom::Odometer>(*sensor);
+          sensorPtr = mgr.CreateSensor<gz::sensors::OpticalSensor>(*sensor);
         }
         else
         {

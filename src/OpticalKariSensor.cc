@@ -31,7 +31,7 @@
 #include <gz/msgs/Utility.hh>
 #include <gz/transport/Node.hh>
 
-#include "gz/sensors/CameraSensor.hh"
+// #include "gz/sensors/CameraSensor.hh"
 #include "gz/sensors/ImageBrownDistortionModel.hh"
 #include "gz/sensors/ImageDistortion.hh"
 #include "gz/sensors/ImageGaussianNoiseModel.hh"
@@ -40,6 +40,7 @@
 #include "gz/sensors/RenderingEvents.hh"
 #include "gz/sensors/SensorFactory.hh"
 #include "gz/sensors/SensorTypes.hh"
+#include "gz/sensors/OpticalKariSensor.hh"
 
 #include "gz/rendering/Utils.hh"
 
@@ -47,7 +48,7 @@ using namespace gz;
 using namespace sensors;
 
 /// \brief Private data for CameraSensor
-class gz::sensors::CameraSensorPrivate
+class gz::sensors::OpticalKariSensorPrivate
 {
   /// \brief Save an image
   /// \param[in] _data the image data to be saved
@@ -200,7 +201,7 @@ class gz::sensors::CameraSensorPrivate
 };
 
 //////////////////////////////////////////////////
-bool CameraSensor::CreateCamera()
+bool OpticalKariSensor::CreateCamera()
 {
   sdf::Camera *cameraSdf = this->dataPtr->sdfSensor.CameraSensor();
   if (!cameraSdf)
@@ -321,7 +322,7 @@ bool CameraSensor::CreateCamera()
     double cx = cameraSdf->LensIntrinsicsCx();
     double cy = cameraSdf->LensIntrinsicsCy();
     double s = cameraSdf->LensIntrinsicsSkew();
-    auto projectionMatrix = CameraSensorPrivate::BuildProjectionMatrix(
+    auto projectionMatrix = OpticalKariSensorPrivate::BuildProjectionMatrix(
         this->dataPtr->camera->ImageWidth(),
         this->dataPtr->camera->ImageHeight(),
         fx, fy, cx, cy, s,
@@ -375,7 +376,7 @@ bool CameraSensor::CreateCamera()
     double cy = cameraSdf->LensProjectionCy();
     double s = 0;
 
-    auto projectionMatrix = CameraSensorPrivate::BuildProjectionMatrix(
+    auto projectionMatrix = OpticalKariSensorPrivate::BuildProjectionMatrix(
         this->dataPtr->camera->ImageWidth(),
         this->dataPtr->camera->ImageHeight(),
         fx, fy, cx, cy, s,
@@ -391,13 +392,13 @@ bool CameraSensor::CreateCamera()
 }
 
 //////////////////////////////////////////////////
-CameraSensor::CameraSensor()
-  : dataPtr(new CameraSensorPrivate())
+OpticalKariSensor::OpticalKariSensor()
+  : dataPtr(new OpticalKariSensorPrivate())
 {
 }
 
 //////////////////////////////////////////////////
-CameraSensor::~CameraSensor()
+OpticalKariSensor::~OpticalKariSensor()
 {
   if (this->Scene() && this->dataPtr->camera)
   {
@@ -406,13 +407,13 @@ CameraSensor::~CameraSensor()
 }
 
 //////////////////////////////////////////////////
-bool CameraSensor::Init()
+bool OpticalKariSensor::Init()
 {
   return this->Sensor::Init();
 }
 
 //////////////////////////////////////////////////
-bool CameraSensor::Load(const sdf::Sensor &_sdf)
+bool OpticalKariSensor::Load(const sdf::Sensor &_sdf)
 {
   std::lock_guard<std::mutex> lock(this->dataPtr->mutex);
 
@@ -422,7 +423,7 @@ bool CameraSensor::Load(const sdf::Sensor &_sdf)
   }
 
   // Check if this is the right type
-  if (_sdf.Type() != sdf::SensorType::CAMERA)
+  if (_sdf.Type() != sdf::SensorType::CUSTOM)
   {
     gzerr << "Attempting to a load a Camera sensor, but received "
       << "a " << _sdf.TypeStr() << std::endl;
@@ -437,8 +438,8 @@ bool CameraSensor::Load(const sdf::Sensor &_sdf)
 
   this->dataPtr->sdfSensor = _sdf;
 
-  // if (this->Topic().empty())
-  this->SetTopic("/mycamera");
+  if (this->Topic().empty())
+    this->SetTopic("/camera");
 
   if (!_sdf.CameraSensor()->CameraInfoTopic().empty())
   {
@@ -478,7 +479,7 @@ bool CameraSensor::Load(const sdf::Sensor &_sdf)
     }
 
     this->dataPtr->node.Subscribe(this->dataPtr->triggerTopic,
-        &CameraSensor::OnTrigger, this);
+        &OpticalKariSensor::OnTrigger, this);
 
     gzdbg << "Camera trigger messages for [" << this->Name() << "] subscribed"
            << " on [" << this->dataPtr->triggerTopic << "]" << std::endl;
@@ -493,14 +494,14 @@ bool CameraSensor::Load(const sdf::Sensor &_sdf)
 
   this->dataPtr->sceneChangeConnection =
       RenderingEvents::ConnectSceneChangeCallback(
-      std::bind(&CameraSensor::SetScene, this, std::placeholders::_1));
+      std::bind(&OpticalKariSensor::SetScene, this, std::placeholders::_1));
 
   this->dataPtr->initialized = true;
   return true;
 }
 
 //////////////////////////////////////////////////
-bool CameraSensor::Load(sdf::ElementPtr _sdf)
+bool OpticalKariSensor::Load(sdf::ElementPtr _sdf)
 {
   sdf::Sensor sdfSensor;
   sdfSensor.Load(_sdf);
@@ -508,14 +509,14 @@ bool CameraSensor::Load(sdf::ElementPtr _sdf)
 }
 
 /////////////////////////////////////////////////
-gz::common::ConnectionPtr CameraSensor::ConnectImageCallback(
+gz::common::ConnectionPtr OpticalKariSensor::ConnectImageCallback(
     std::function<void(const gz::msgs::Image &)> _callback)
 {
   return this->dataPtr->imageEvent.Connect(_callback);
 }
 
 /////////////////////////////////////////////////
-void CameraSensor::SetScene(gz::rendering::ScenePtr _scene)
+void OpticalKariSensor::SetScene(gz::rendering::ScenePtr _scene)
 {
   std::lock_guard<std::mutex> lock(this->dataPtr->mutex);
   // APIs make it possible for the scene pointer to change
@@ -530,9 +531,9 @@ void CameraSensor::SetScene(gz::rendering::ScenePtr _scene)
 }
 
 //////////////////////////////////////////////////
-bool CameraSensor::Update(const std::chrono::steady_clock::duration &_now)
+bool OpticalKariSensor::Update(const std::chrono::steady_clock::duration &_now)
 {
-  GZ_PROFILE("CameraSensor::Update");
+  GZ_PROFILE("OpticalKariSensor::Update");
   if (!this->dataPtr->initialized)
   {
     gzerr << "Not initialized, update ignored.\n";
@@ -591,7 +592,7 @@ bool CameraSensor::Update(const std::chrono::steady_clock::duration &_now)
     // generate sensor data
     this->Render();
     {
-      GZ_PROFILE("CameraSensor::Update Copy image");
+      GZ_PROFILE("OpticalKariSensor::Update Copy image");
       this->dataPtr->camera->Copy(this->dataPtr->image);
     }
 
@@ -643,7 +644,7 @@ bool CameraSensor::Update(const std::chrono::steady_clock::duration &_now)
     // create message
     msgs::Image msg;
     {
-      GZ_PROFILE("CameraSensor::Update Message");
+      GZ_PROFILE("OpticalKariSensor::Update Message");
       msg.set_width(width);
       msg.set_height(height);
       msg.set_step(width * rendering::PixelUtil::BytesPerPixel(
@@ -659,7 +660,7 @@ bool CameraSensor::Update(const std::chrono::steady_clock::duration &_now)
     // publish the image message
     {
       this->AddSequence(msg.mutable_header());
-      GZ_PROFILE("CameraSensor::Update Publish");
+      GZ_PROFILE("OpticalKariSensor::Update Publish");
       this->dataPtr->pub.Publish(msg);
     }
 
@@ -692,14 +693,14 @@ bool CameraSensor::Update(const std::chrono::steady_clock::duration &_now)
 }
 
 //////////////////////////////////////////////////
-void CameraSensor::OnTrigger(const gz::msgs::Boolean &/*_msg*/)
+void OpticalKariSensor::OnTrigger(const gz::msgs::Boolean &/*_msg*/)
 {
   std::lock_guard<std::mutex> lock(this->dataPtr->mutex);
   this->dataPtr->isTriggered = true;
 }
 
 //////////////////////////////////////////////////
-bool CameraSensorPrivate::SaveImage(const unsigned char *_data,
+bool OpticalKariSensorPrivate::SaveImage(const unsigned char *_data,
     unsigned int _width, unsigned int _height,
     gz::common::Image::PixelFormatType _format)
 {
@@ -723,7 +724,7 @@ bool CameraSensorPrivate::SaveImage(const unsigned char *_data,
 }
 
 //////////////////////////////////////////////////
-unsigned int CameraSensor::ImageWidth() const
+unsigned int OpticalKariSensor::ImageWidth() const
 {
   if (this->dataPtr->camera)
     return this->dataPtr->camera->ImageWidth();
@@ -731,7 +732,7 @@ unsigned int CameraSensor::ImageWidth() const
 }
 
 //////////////////////////////////////////////////
-unsigned int CameraSensor::ImageHeight() const
+unsigned int OpticalKariSensor::ImageHeight() const
 {
   if (this->dataPtr->camera)
     return this->dataPtr->camera->ImageHeight();
@@ -739,19 +740,19 @@ unsigned int CameraSensor::ImageHeight() const
 }
 
 //////////////////////////////////////////////////
-rendering::CameraPtr CameraSensor::RenderingCamera() const
+rendering::CameraPtr OpticalKariSensor::RenderingCamera() const
 {
   return this->dataPtr->camera;
 }
 
 //////////////////////////////////////////////////
-std::string CameraSensor::InfoTopic() const
+std::string OpticalKariSensor::InfoTopic() const
 {
   return this->dataPtr->infoTopic;
 }
 
 //////////////////////////////////////////////////
-bool CameraSensor::AdvertiseInfo()
+bool OpticalKariSensor::AdvertiseInfo()
 {
   if (this->dataPtr->infoTopic.empty())
   {
@@ -769,7 +770,7 @@ bool CameraSensor::AdvertiseInfo()
 }
 
 //////////////////////////////////////////////////
-bool CameraSensor::AdvertiseInfo(const std::string &_topic)
+bool OpticalKariSensor::AdvertiseInfo(const std::string &_topic)
 {
   this->dataPtr->infoTopic = _topic;
 
@@ -791,7 +792,7 @@ bool CameraSensor::AdvertiseInfo(const std::string &_topic)
 }
 
 //////////////////////////////////////////////////
-void CameraSensor::PublishInfo(
+void OpticalKariSensor::PublishInfo(
   const std::chrono::steady_clock::duration &_now)
 {
   *this->dataPtr->infoMsg.mutable_header()->mutable_stamp() =
@@ -800,7 +801,7 @@ void CameraSensor::PublishInfo(
 }
 
 //////////////////////////////////////////////////
-void CameraSensor::PopulateInfo(const sdf::Camera *_cameraSdf)
+void OpticalKariSensor::PopulateInfo(const sdf::Camera *_cameraSdf)
 {
   unsigned int width = _cameraSdf->ImageWidth();
   unsigned int height = _cameraSdf->ImageHeight();
@@ -863,8 +864,8 @@ void CameraSensor::PopulateInfo(const sdf::Camera *_cameraSdf)
 
   // Note: while Gazebo interprets the camera frame to be looking towards +X,
   // other tools, such as ROS, may interpret this frame as looking towards +Z.
-  // To make this configurable the user has the option to set an optical frame.
-  // If the user has set <optical_frame_id> in the cameraSdf use it,
+  // To make this configurable the user has the option to set an OpticalKari frame.
+  // If the user has set <OpticalKari_frame_id> in the cameraSdf use it,
   // otherwise fall back to the sensor frame.
   if (_cameraSdf->OpticalFrameId().empty())
   {
@@ -883,7 +884,7 @@ void CameraSensor::PopulateInfo(const sdf::Camera *_cameraSdf)
 }
 
 //////////////////////////////////////////////////
-void CameraSensor::SetBaseline(double _baseline)
+void OpticalKariSensor::SetBaseline(double _baseline)
 {
   this->dataPtr->baseline = _baseline;
 
@@ -897,54 +898,54 @@ void CameraSensor::SetBaseline(double _baseline)
 }
 
 //////////////////////////////////////////////////
-double CameraSensor::Baseline() const
+double OpticalKariSensor::Baseline() const
 {
   return this->dataPtr->baseline;
 }
 
 //////////////////////////////////////////////////
-bool CameraSensor::HasConnections() const
+bool OpticalKariSensor::HasConnections() const
 {
   return this->HasImageConnections() || this->HasInfoConnections();
 }
 
 //////////////////////////////////////////////////
-bool CameraSensor::HasImageConnections() const
+bool OpticalKariSensor::HasImageConnections() const
 {
   return (this->dataPtr->pub && this->dataPtr->pub.HasConnections()) ||
          this->dataPtr->imageEvent.ConnectionCount() > 0u;
 }
 
 //////////////////////////////////////////////////
-bool CameraSensor::HasInfoConnections() const
+bool OpticalKariSensor::HasInfoConnections() const
 {
   return this->dataPtr->infoPub && this->dataPtr->infoPub.HasConnections();
 }
 
 //////////////////////////////////////////////////
-const std::string& CameraSensor::OpticalFrameId() const
+const std::string& OpticalKariSensor::OpticalFrameId() const
 {
   return this->dataPtr->opticalFrameId;
 }
 
 //////////////////////////////////////////////////
-math::Matrix4d CameraSensorPrivate::BuildProjectionMatrix(
+math::Matrix4d OpticalKariSensorPrivate::BuildProjectionMatrix(
     double _imageWidth, double _imageHeight,
     double _intrinsicsFx, double _intrinsicsFy,
     double _intrinsicsCx, double _intrinsicsCy,
     double _intrinsicsS,
     double _clipNear, double _clipFar)
 {
-  return CameraSensorPrivate::BuildNDCMatrix(
+  return OpticalKariSensorPrivate::BuildNDCMatrix(
            0, _imageWidth, 0, _imageHeight, _clipNear, _clipFar) *
-           CameraSensorPrivate::BuildPerspectiveMatrix(
+           OpticalKariSensorPrivate::BuildPerspectiveMatrix(
              _intrinsicsFx, _intrinsicsFy,
              _intrinsicsCx, _imageHeight - _intrinsicsCy,
              _intrinsicsS, _clipNear, _clipFar);
 }
 
 //////////////////////////////////////////////////
-math::Matrix4d CameraSensorPrivate::BuildNDCMatrix(
+math::Matrix4d OpticalKariSensorPrivate::BuildNDCMatrix(
     double _left, double _right,
     double _bottom, double _top,
     double _near, double _far)
@@ -973,7 +974,7 @@ math::Matrix4d CameraSensorPrivate::BuildNDCMatrix(
 }
 
 //////////////////////////////////////////////////
-math::Matrix4d CameraSensorPrivate::BuildPerspectiveMatrix(
+math::Matrix4d OpticalKariSensorPrivate::BuildPerspectiveMatrix(
     double _intrinsicsFx, double _intrinsicsFy,
     double _intrinsicsCx, double _intrinsicsCy,
     double _intrinsicsS,
