@@ -343,10 +343,8 @@ bool OpticalFlowSensor::Load(const sdf::Sensor &_sdf)
   gzdbg << "Points for [" << this->Name() << "] advertised on ["
          << this->Topic() << "/points]" << std::endl;
 
-  gzerr << "create camera1\n";
   if (this->Scene())
   {
-    gzerr << "create camera2\n";
     this->CreateCamera();
   }
   this->dataPtr->sceneChangeConnection =
@@ -361,7 +359,6 @@ bool OpticalFlowSensor::Load(const sdf::Sensor &_sdf)
 //////////////////////////////////////////////////
 bool OpticalFlowSensor::CreateCamera()
 {
-  gzerr << "create camera3\n";
   const sdf::Camera *cameraSdf = this->dataPtr->sdfSensor.CameraSensor();
 
   if (!cameraSdf)
